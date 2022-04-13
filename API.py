@@ -10,3 +10,4 @@ class BTCApi:
         raw_response = json.loads(response_data.content)
         response = raw_response['bpi']
         return response
+

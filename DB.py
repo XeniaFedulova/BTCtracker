@@ -32,5 +32,9 @@ class DataStorage:
         self.cursor.execute("SELECT * FROM btc_data where date >= \'%s\' and date <= \'%s\'"
                             % (start, end)
                                 )
-        data = self.cursor.fetchall()
+        raw_data = self.cursor.fetchall()
+        data = {}
+        for i in raw_data:
+            data[i[0]] = i[1]
         return data
+
