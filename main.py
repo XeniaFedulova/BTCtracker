@@ -53,8 +53,8 @@ def search_first_valid_date(api: BTCApi, start, end):
                 # поиск в большей половине
 
 
-def default_getting_data_from_server(data_from_db:dict, start:datetime, end:datetime, n_days:timedelta, api:BTCApi,
-                    db:DataStorage):
+def default_getting_data_from_server(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta,
+                                     api: BTCApi):
     start_date_req = start
 
     while True:
@@ -75,11 +75,10 @@ def default_getting_data_from_server(data_from_db:dict, start:datetime, end:date
         print(data)
         start_date_req = end_date_req
 
-    db.load_to_database(data_from_db)
     return data_from_db
 
-def minimizing_data(data_from_db:dict, start:datetime, end:datetime, n_days:timedelta, api:BTCApi,
-                    db:DataStorage):
+
+def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
     curr_date = start
     one_day = timedelta(days=1)
     counter = 0
@@ -117,8 +116,35 @@ def minimizing_data(data_from_db:dict, start:datetime, end:datetime, n_days:time
     return data_from_db
 
 
-def minimizing_requests():
-    pass
+def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
+    one_day = timedelta(days=1)
+    start_req_date = start
+    end_req_date = start_req_date + n_days - one_day
+
+    while start_req_date < end:
+        curr_date = start_req_date
+        while True:
+            if str(curr_date.date()) in data_from_db:
+                curr_date += one_day
+            else:
+                start_this_req_date = curr_date
+                break
+        curr_date = end_req_date
+        while True:
+            if str(curr_date.date()) in data_from_db:
+                curr_date -= one_day
+            else:
+                end_this_req_date = curr_date
+                break
+        dates = api.make_request(str(start_this_req_date.date()), str(end_this_req_date.date()))
+        for date, price in dates.items():
+            data_from_db[date] = price
+        start_req_date += n_days
+        end_req_date += n_days
+        if end_req_date > end:
+            end_req_date = end
+
+    return data_from_db
 
 
 # парсинг аргументов из командной строки
@@ -149,9 +175,13 @@ end = make_date_of_string(end_date)
 time = end - start
 amount_of_dates = time.days
 data_from_db = db.get_from_database(start_date, end_date)
+print(data_from_db)
+
+
 
 # поиск первой валидной даты
 first_valid_date = search_first_valid_date(api, start, end)
+print("mdkd")
 if first_valid_date == None:
     print("Заданный интервал невалиден")
 else:
@@ -162,17 +192,19 @@ else:
 # запрос данных в зависимости от режима
 if len(data_from_db) < amount_of_dates:
     if mode == "min_data":
-        data = minimizing_data(data_from_db, start, end, n_days, api, db)
+        data = minimizing_data(data_from_db, start, end, n_days, api)
+        db.load_to_database(data)
         print("Минимизация количества дат в запросах")
     elif mode == "min_req":
-        data = minimizing_requests()
+        data = minimizing_requests(data_from_db, start, end, n_days, api)
+        db.load_to_database(data)
         print("Минимизация количества запросов")
     else:
-        data = default_getting_data_from_server(data_from_db, start, end, n_days, api, db)
+        data = default_getting_data_from_server(data_from_db, start, end, n_days, api)
+        db.load_to_database(data)
         print("Данные получены с сервера в стандартном режиме")
 else:
     data = data_from_db
     print("Данные есть в базе")
 
 plot.make_plot(data)
-
