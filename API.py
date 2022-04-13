@@ -2,8 +2,18 @@ import requests
 import json
 
 
+def interval(func: callable):
+    def wrapper(*args, **kwargs):
+        res = func(*args, **kwargs)
+        interval = args
+        print("requesting "+interval[1] + " - " + interval[2])
+        return res
+
+    return wrapper
+
 class BTCApi:
 
+    @interval
     def make_request(self, start, end):
         response_data = requests.get('https://api.coindesk.com/v1/bpi/historical/close.json',
                                      params={'start': start, 'end': end})
@@ -11,3 +21,6 @@ class BTCApi:
         response = raw_response['bpi']
         return response
 
+
+a = BTCApi()
+b = a.make_request('2022-01-15', "2022-01-17")

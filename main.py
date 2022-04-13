@@ -62,17 +62,13 @@ def default_getting_data_from_server(data_from_db: dict, start: datetime, end: d
 
         if end_date_req >= end:
             end_date_req = end
-            print("making request")
             data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
             for date, price in data.items():
                 data_from_db[date] = price
-            print(data)
             break
-        print("making request")
         data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
         for date, price in data.items():
             data_from_db[date] = price
-        print(data)
         start_date_req = end_date_req
 
     return data_from_db
@@ -181,7 +177,6 @@ print(data_from_db)
 
 # поиск первой валидной даты
 first_valid_date = search_first_valid_date(api, start, end)
-print("mdkd")
 if first_valid_date == None:
     print("Заданный интервал невалиден")
 else:
