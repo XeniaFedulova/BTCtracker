@@ -6,10 +6,11 @@ def interval(func: callable):
     def wrapper(*args, **kwargs):
         res = func(*args, **kwargs)
         interval = args
-        print("requesting "+interval[1] + " - " + interval[2])
+        print("requesting " + interval[1] + " - " + interval[2])
         return res
 
     return wrapper
+
 
 class BTCApi:
 
@@ -20,7 +21,3 @@ class BTCApi:
         raw_response = json.loads(response_data.content)
         response = raw_response['bpi']
         return response
-
-
-a = BTCApi()
-b = a.make_request('2022-01-15', "2022-01-17")

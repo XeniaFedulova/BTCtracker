@@ -2,7 +2,6 @@ import sqlite3
 
 
 class DataStorage:
-
     data_base_name = None
     connection = None
     cursor = None
@@ -31,10 +30,9 @@ class DataStorage:
     def get_from_database(self, start, end):
         self.cursor.execute("SELECT * FROM btc_data where date >= \'%s\' and date <= \'%s\' ORDER BY date"
                             % (start, end)
-                                )
+                            )
         raw_data = self.cursor.fetchall()
         data = {}
         for i in raw_data:
             data[i[0]] = i[1]
         return data
-

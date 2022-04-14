@@ -54,7 +54,7 @@ def search_first_valid_date(api: BTCApi, start, end):
 
 
 def default_getting_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta,
-                                     api: BTCApi):
+                         api: BTCApi):
     start_date_req = start
     end_date_req = start_date_req + n_days
     curr_date = start_date_req
@@ -188,7 +188,7 @@ else:
         print("Первая валидная дата в итервале - " + str(start.date()))
 
 # запрос данных в зависимости от режима
-print("Количество дат в кэшче по заданному интервалу: "+str(length))
+print("Количество дат в кэшче по заданному интервалу: " + str(length))
 if len(data_from_db) < amount_of_dates:
     print("Недостаточно данных из кэша, запрос данных с сервера")
     if mode == "min_data":
