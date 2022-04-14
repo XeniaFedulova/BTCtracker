@@ -53,23 +53,28 @@ def search_first_valid_date(api: BTCApi, start, end):
                 # поиск в большей половине
 
 
-def default_getting_data_from_server(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta,
+def default_getting_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta,
                                      api: BTCApi):
     start_date_req = start
+    end_date_req = start_date_req + n_days
+    curr_date = start_date_req
+    one_day = timedelta(days=1)
 
-    while True:
-        end_date_req = start_date_req + n_days
+    while start_date_req < end:
 
         if end_date_req >= end:
             end_date_req = end
-            data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
-            for date, price in data.items():
-                data_from_db[date] = price
-            break
-        data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
-        for date, price in data.items():
-            data_from_db[date] = price
+
+        while curr_date <= end_date_req:
+            if str(curr_date.date()) not in data_from_db:
+                data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
+                for date, price in data.items():
+                    data_from_db[date] = price
+                break
+            curr_date += one_day
+
         start_date_req = end_date_req
+        end_date_req = start_date_req + n_days
 
     return data_from_db
 
@@ -171,9 +176,7 @@ end = make_date_of_string(end_date)
 time = end - start
 amount_of_dates = time.days
 data_from_db = db.get_from_database(start_date, end_date)
-print(data_from_db)
-
-
+length = len(data_from_db)
 
 # поиск первой валидной даты
 first_valid_date = search_first_valid_date(api, start, end)
@@ -185,7 +188,9 @@ else:
         print("Первая валидная дата в итервале - " + str(start.date()))
 
 # запрос данных в зависимости от режима
+print("Количество дат в кэшче по заданному интервалу: "+str(length))
 if len(data_from_db) < amount_of_dates:
+    print("Недостаточно данных из кэша, запрос данных с сервера")
     if mode == "min_data":
         data = minimizing_data(data_from_db, start, end, n_days, api)
         db.load_to_database(data)
@@ -195,11 +200,11 @@ if len(data_from_db) < amount_of_dates:
         db.load_to_database(data)
         print("Минимизация количества запросов")
     else:
-        data = default_getting_data_from_server(data_from_db, start, end, n_days, api)
+        data = default_getting_data(data_from_db, start, end, n_days, api)
         db.load_to_database(data)
         print("Данные получены с сервера в стандартном режиме")
 else:
     data = data_from_db
-    print("Данные есть в базе")
+    print("Данные получены из кэша")
 
 plot.make_plot(data)

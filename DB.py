@@ -29,7 +29,7 @@ class DataStorage:
         self.connection.commit()
 
     def get_from_database(self, start, end):
-        self.cursor.execute("SELECT * FROM btc_data where date >= \'%s\' and date <= \'%s\'"
+        self.cursor.execute("SELECT * FROM btc_data where date >= \'%s\' and date <= \'%s\' ORDER BY date"
                             % (start, end)
                                 )
         raw_data = self.cursor.fetchall()
