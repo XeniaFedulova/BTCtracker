@@ -36,3 +36,8 @@ class DataStorage:
         for i in raw_data:
             data[i[0]] = i[1]
         return data
+
+    def drop_data(self):
+        self.cursor.execute("DELETE FROM btc_data")
+        self.connection.commit()
+

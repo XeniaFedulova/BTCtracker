@@ -7,19 +7,15 @@ import argparse
 
 
 def make_date_of_string(date: str):
-    dates = {}
-    dates['year'], dates['month'], dates['day'] = date.split('-')
-    for key, item in dates.items():
-        if item.startswith("0"):
-            item = item.replace("0", "")
-        dates[key] = int(item)
-    date = datetime(day=dates['day'], month=dates['month'], year=dates['year'])
+    date = datetime.strptime(date, '%Y-%m-%d')
     return date
 
 
 def search_first_valid_date(api: BTCApi, start, end):
+    one_day = timedelta(days=1)
     try:
-        api.make_request(str(start.date()), str(start.date()))
+        a = api.make_request(str(start.date()), str(start.date() + one_day))
+        print(a)
         return start
     except:
         # бинарный поиск
@@ -28,16 +24,16 @@ def search_first_valid_date(api: BTCApi, start, end):
         while True:
             if delta.days < 1:
                 try:
-                    api.make_request(str(start.date()), str(start.date()))
+                    api.make_request(str(start.date()), str(start.date() + one_day))
                     return start
                 except:
                     try:
-                        api.make_request(str(end.date()), str(end.date()))
+                        api.make_request(str(end.date()), str(end.date() + one_day))
                         return end
                     except:
                         return None
             try:
-                api.make_request(str(start.date()), str(start.date()))
+                api.make_request(str(start.date()), str(start.date() + one_day))
                 end = start
                 start -= delta
                 delta = (end - start) / 2
@@ -152,10 +148,12 @@ n_days = timedelta(n)
 first_valid_date_flag = args.first_valid_date
 mode = args.mode
 
+
 # объявление объектов классов
 db = DataStorage("btc_tracker")
 api = BTCApi()
 plot = plotData()
+
 
 start = make_date_of_string(start_date)
 end = make_date_of_string(end_date)
@@ -163,6 +161,7 @@ time = end - start
 amount_of_dates = time.days
 data_from_db = db.get_from_database(start_date, end_date)
 length = len(data_from_db)
+
 
 # поиск первой валидной даты
 first_valid_date = search_first_valid_date(api, start, end)
@@ -172,6 +171,7 @@ else:
     start = datetime(day=first_valid_date.day, month=first_valid_date.month, year=first_valid_date.year)
     if first_valid_date_flag:
         print("Первая валидная дата в итервале - " + str(start.date()))
+
 
 # запрос данных в зависимости от режима
 print("Количество дат в кэшче по заданному интервалу: " + str(length))
