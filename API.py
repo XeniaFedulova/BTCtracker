@@ -21,10 +21,10 @@ def minus_day_from_end(delta):
             end = str(end.date() - delta)
             res = func(self, start, end)
             return res
+
         return wrapper
+
     return pseudo_decorator
-
-
 
 
 class BTCApi:
@@ -32,7 +32,6 @@ class BTCApi:
     @minus_day_from_end(delta=timedelta(days=1))
     @interval
     def make_request(self, start, end):
-
         response_data = requests.get('https://api.coindesk.com/v1/bpi/historical/close.json',
                                      params={'start': start, 'end': end})
         raw_response = json.loads(response_data.content)
@@ -43,4 +42,3 @@ class BTCApi:
         dates = self.make_request(start, end)
         for date, price in dates.items():
             data_from_db[date] = price
-

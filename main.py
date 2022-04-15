@@ -14,8 +14,7 @@ def make_date_of_string(date: str):
 def search_first_valid_date(api: BTCApi, start, end):
     one_day = timedelta(days=1)
     try:
-        a = api.make_request(str(start.date()), str(start.date() + one_day))
-        print(a)
+        api.make_request(str(start.date()), str(start.date() + one_day))
         return start
     except:
         # бинарный поиск
@@ -70,33 +69,32 @@ def default_getting_data(data_from_db: dict, start: datetime, end: datetime, n_d
 
 
 def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
-    curr_date = start
     one_day = timedelta(days=1)
+    curr_date = start
     counter = 0
     start_req_date = curr_date
     while True:
         if str(curr_date.date()) not in data_from_db:
+            if curr_date == end:
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((curr_date).date()))
+                break
             if counter == 0:
                 start_req_date = curr_date
                 counter += 1
-            elif counter == n_days.days:
-                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(curr_date.date()))
+            elif counter == n_days.days - 1:
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((curr_date + one_day).date()))
                 counter = 0
-            if curr_date == end:
-                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(curr_date.date()))
-                break
             else:
                 counter += 1
         else:
             if counter != 0:
                 end_req_date = curr_date - one_day
-                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(end_req_date.date()))
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((end_req_date + one_day).date()))
             if curr_date == end:
                 break
             counter = 0
 
         curr_date += one_day
-
 
     return data_from_db
 
@@ -104,28 +102,41 @@ def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: 
 def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
     one_day = timedelta(days=1)
     start_req_date = start
-    end_req_date = start_req_date + n_days - one_day
+    end_req_date = start_req_date + n_days
+    start_this_req_date = start_req_date
+    end_this_req_date = end_req_date
 
     while start_req_date < end:
+
+        if end_req_date > end:
+            end_req_date = end + one_day
+
         curr_date = start_req_date
-        while True:
+        while curr_date <= end_req_date:
             if str(curr_date.date()) in data_from_db:
+                if curr_date == end_req_date:
+                    break
                 curr_date += one_day
             else:
                 start_this_req_date = curr_date
                 break
+
+        if curr_date == end_req_date:
+            start_req_date += n_days
+            end_req_date += n_days
+            continue
+
         curr_date = end_req_date
-        while True:
+        while curr_date > start_this_req_date:
             if str(curr_date.date()) in data_from_db:
                 curr_date -= one_day
             else:
                 end_this_req_date = curr_date
                 break
+
         api.put_req_data_to_dict(data_from_db, str(start_this_req_date.date()), str(end_this_req_date.date()))
         start_req_date += n_days
         end_req_date += n_days
-        if end_req_date > end:
-            end_req_date = end
 
     return data_from_db
 
@@ -148,12 +159,10 @@ n_days = timedelta(n)
 first_valid_date_flag = args.first_valid_date
 mode = args.mode
 
-
 # объявление объектов классов
 db = DataStorage("btc_tracker")
 api = BTCApi()
 plot = plotData()
-
 
 start = make_date_of_string(start_date)
 end = make_date_of_string(end_date)
@@ -161,7 +170,6 @@ time = end - start
 amount_of_dates = time.days
 data_from_db = db.get_from_database(start_date, end_date)
 length = len(data_from_db)
-
 
 # поиск первой валидной даты
 first_valid_date = search_first_valid_date(api, start, end)
@@ -171,7 +179,6 @@ else:
     start = datetime(day=first_valid_date.day, month=first_valid_date.month, year=first_valid_date.year)
     if first_valid_date_flag:
         print("Первая валидная дата в итервале - " + str(start.date()))
-
 
 # запрос данных в зависимости от режима
 print("Количество дат в кэшче по заданному интервалу: " + str(length))
