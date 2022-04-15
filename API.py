@@ -21,3 +21,10 @@ class BTCApi:
         raw_response = json.loads(response_data.content)
         response = raw_response['bpi']
         return response
+
+    def put_req_data_to_dict(self, data_from_db: dict, start, end):
+        dates = self.make_request(start, end)
+        for date, price in dates.items():
+            data_from_db[date] = price
+
+

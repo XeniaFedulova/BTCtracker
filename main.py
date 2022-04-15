@@ -42,39 +42,33 @@ def search_first_valid_date(api: BTCApi, start, end):
                 start -= delta
                 delta = (end - start) / 2
                 start += delta
-                print(start)
-                print(end)
                 # поиск в меньшей половине
             except:
                 delta = (end - start) / 2
                 start += delta
-                print(start)
-                print(end)
                 # поиск в большей половине
 
 
 def default_getting_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta,
                          api: BTCApi):
-    start_date_req = start
-    end_date_req = start_date_req + n_days
-    curr_date = start_date_req
+    start_req_date = start
+    end_req_date = start_req_date + n_days
+    curr_date = start_req_date
     one_day = timedelta(days=1)
 
-    while start_date_req < end:
+    while start_req_date < end:
 
-        if end_date_req >= end:
-            end_date_req = end
+        if end_req_date >= end:
+            end_req_date = end
 
-        while curr_date <= end_date_req:
+        while curr_date <= end_req_date:
             if str(curr_date.date()) not in data_from_db:
-                data = api.make_request(str(start_date_req.date()), str(end_date_req.date()))
-                for date, price in data.items():
-                    data_from_db[date] = price
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(end_req_date.date()))
                 break
             curr_date += one_day
 
-        start_date_req = end_date_req
-        end_date_req = start_date_req + n_days
+        start_req_date = end_req_date
+        end_req_date = start_req_date + n_days
 
     return data_from_db
 
@@ -83,37 +77,31 @@ def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: 
     curr_date = start
     one_day = timedelta(days=1)
     counter = 0
-    start_api_date = curr_date
+    start_req_date = curr_date
     while True:
         if str(curr_date.date()) not in data_from_db:
             if counter == 0:
-                start_api_date = curr_date
+                start_req_date = curr_date
                 counter += 1
             elif counter == n_days.days:
-                dates = api.make_request(str(start_api_date.date()), str(curr_date.date()))
-                for date, price in dates.items():
-                    data_from_db[date] = price
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(curr_date.date()))
                 counter = 0
             if curr_date == end:
-                dates = api.make_request(str(start_api_date.date()), str(curr_date.date()))
-                for date, price in dates.items():
-                    data_from_db[date] = price
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(curr_date.date()))
                 break
             else:
                 counter += 1
         else:
             if counter != 0:
-                end_api_date = curr_date - one_day
-                dates = api.make_request(str(start_api_date.date()), str(end_api_date.date()))
-                for date, price in dates.items():
-                    data_from_db[date] = price
+                end_req_date = curr_date - one_day
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str(end_req_date.date()))
             if curr_date == end:
                 break
             counter = 0
 
         curr_date += one_day
 
-    db.load_to_database(data_from_db)
+
     return data_from_db
 
 
@@ -137,9 +125,7 @@ def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_da
             else:
                 end_this_req_date = curr_date
                 break
-        dates = api.make_request(str(start_this_req_date.date()), str(end_this_req_date.date()))
-        for date, price in dates.items():
-            data_from_db[date] = price
+        api.put_req_data_to_dict(data_from_db, str(start_this_req_date.date()), str(end_this_req_date.date()))
         start_req_date += n_days
         end_req_date += n_days
         if end_req_date > end:
