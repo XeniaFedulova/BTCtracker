@@ -13,23 +13,25 @@ def interval(func: callable):
 
     return wrapper
 
-# def minus_day_from_end(func: callable, end):
-#     def wrapper(*args, **kwargs):
-#         one_day = timedelta(days=1)
-#         end = datetime.strptime(end, '%Y-%m-%d')
-#         end = end.date() - one_day
-#         func(*args, **kwargs)
+
+def minus_day_from_end(delta):
+    def pseudo_decorator(func: callable):
+        def wrapper(self, start, end):
+            end = datetime.strptime(end, '%Y-%m-%d')
+            end = str(end.date() - delta)
+            res = func(self, start, end)
+            return res
+        return wrapper
+    return pseudo_decorator
+
 
 
 
 class BTCApi:
 
+    @minus_day_from_end(delta=timedelta(days=1))
     @interval
     def make_request(self, start, end):
-
-        one_day = timedelta(days=1)
-        end = datetime.strptime(end, '%Y-%m-%d')
-        end = end.date() - one_day
 
         response_data = requests.get('https://api.coindesk.com/v1/bpi/historical/close.json',
                                      params={'start': start, 'end': end})
@@ -42,8 +44,3 @@ class BTCApi:
         for date, price in dates.items():
             data_from_db[date] = price
 
-
-
-a = BTCApi()
-b = a.make_request("2022-01-01", "2022-01-02")
-print(b)
