@@ -141,63 +141,66 @@ def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_da
     return data_from_db
 
 
-# парсинг аргументов из командной строки
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('-start_date', type=str, help='input start date in format yyyy-mm-dd')
-parser.add_argument('-end_date', type=str, help='input end date in format yyyy-mm-dd')
-parser.add_argument('-n', type=int, help='input maximum amount of days in one request, n <= 100')
-parser.add_argument('-first_valid_date', default=False, type=bool, help='finds first valid date in the interval')
-parser.add_argument('-mode', type=str,
-                    help='minimizes amount of requested data (min_data) or amount of requests (min_req')
+if __name__ == '__main__':
 
-args = parser.parse_args()
 
-start_date = args.start_date
-end_date = args.end_date
-n = args.n
-n_days = timedelta(n)
-first_valid_date_flag = args.first_valid_date
-mode = args.mode
+    # парсинг аргументов из командной строки
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-start_date', type=str, help='input start date in format yyyy-mm-dd')
+    parser.add_argument('-end_date', type=str, help='input end date in format yyyy-mm-dd')
+    parser.add_argument('-n', type=int, help='input maximum amount of days in one request, n <= 100')
+    parser.add_argument('-first_valid_date', default=False, type=bool, help='finds first valid date in the interval')
+    parser.add_argument('-mode', type=str,
+                        help='minimizes amount of requested data (min_data) or amount of requests (min_req')
 
-# объявление объектов классов
-db = DataStorage("btc_tracker")
-api = BTCApi()
-plot = plotData()
+    args = parser.parse_args()
 
-start = make_date_of_string(start_date)
-end = make_date_of_string(end_date)
-time = end - start
-amount_of_dates = time.days
-data_from_db = db.get_from_database(start_date, end_date)
-length = len(data_from_db)
+    start_date = args.start_date
+    end_date = args.end_date
+    n = args.n
+    n_days = timedelta(n)
+    first_valid_date_flag = args.first_valid_date
+    mode = args.mode
 
-# поиск первой валидной даты
-first_valid_date = search_first_valid_date(api, start, end)
-if first_valid_date == None:
-    print("Заданный интервал невалиден")
-else:
-    start = datetime(day=first_valid_date.day, month=first_valid_date.month, year=first_valid_date.year)
-    if first_valid_date_flag:
-        print("Первая валидная дата в итервале - " + str(start.date()))
+    # объявление объектов классов
+    db = DataStorage("btc_tracker")
+    api = BTCApi()
+    plot = plotData()
 
-# запрос данных в зависимости от режима
-print("Количество дат в кэшче по заданному интервалу: " + str(length))
-if len(data_from_db) < amount_of_dates:
-    print("Недостаточно данных из кэша, запрос данных с сервера")
-    if mode == "min_data":
-        data = minimizing_data(data_from_db, start, end, n_days, api)
-        db.load_to_database(data)
-        print("Минимизация количества дат в запросах")
-    elif mode == "min_req":
-        data = minimizing_requests(data_from_db, start, end, n_days, api)
-        db.load_to_database(data)
-        print("Минимизация количества запросов")
+    start = make_date_of_string(start_date)
+    end = make_date_of_string(end_date)
+    time = end - start
+    amount_of_dates = time.days
+    data_from_db = db.get_from_database(start_date, end_date)
+    length = len(data_from_db)
+
+    # поиск первой валидной даты
+    first_valid_date = search_first_valid_date(api, start, end)
+    if first_valid_date == None:
+        print("Заданный интервал невалиден")
     else:
-        data = default_getting_data(data_from_db, start, end, n_days, api)
-        db.load_to_database(data)
-        print("Данные получены с сервера в стандартном режиме")
-else:
-    data = data_from_db
-    print("Данные получены из кэша")
+        start = datetime(day=first_valid_date.day, month=first_valid_date.month, year=first_valid_date.year)
+        if first_valid_date_flag:
+            print("Первая валидная дата в итервале - " + str(start.date()))
 
-plot.make_plot(data)
+    # запрос данных в зависимости от режима
+    print("Количество дат в кэшче по заданному интервалу: " + str(length))
+    if len(data_from_db) < amount_of_dates:
+        print("Недостаточно данных из кэша, запрос данных с сервера")
+        if mode == "min_data":
+            data = minimizing_data(data_from_db, start, end, n_days, api)
+            db.load_to_database(data)
+            print("Минимизация количества дат в запросах")
+        elif mode == "min_req":
+            data = minimizing_requests(data_from_db, start, end, n_days, api)
+            db.load_to_database(data)
+            print("Минимизация количества запросов")
+        else:
+            data = default_getting_data(data_from_db, start, end, n_days, api)
+            db.load_to_database(data)
+            print("Данные получены с сервера в стандартном режиме")
+    else:
+        data = data_from_db
+        print("Данные получены из кэша")
+
+    plot.make_plot(data)
