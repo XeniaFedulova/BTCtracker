@@ -1,3 +1,5 @@
+from requests.compat import JSONDecodeError
+
 from API import BTCApi
 from DB import DataStorage
 from Plot import plotData
@@ -11,28 +13,38 @@ def make_date_of_string(date: str):
     return date
 
 
+def sort_dates_by_order(dates: dict):
+    sorted_dates = sorted(dates.keys())
+    sorted_dict = {}
+
+    for date in sorted_dates:
+        sorted_dict[date] = dates[date]
+
+    return sorted_dict
+
+
 def search_first_valid_date(api: BTCApi, start, end):
-    one_day = timedelta(days=1)
     try:
-        api.make_request(str(start.date()), str(start.date() + one_day))
+        api.make_request(str(start.date()), str(start.date()))
         return start
     except:
+        # JSONDecodeErrordeError as e
         # бинарный поиск
         delta = (end - start) / 2
         start += delta
         while True:
             if delta.days < 1:
                 try:
-                    api.make_request(str(start.date()), str(start.date() + one_day))
+                    api.make_request(str(start.date()), str(start.date()))
                     return start
                 except:
                     try:
-                        api.make_request(str(end.date()), str(end.date() + one_day))
+                        api.make_request(str(end.date()), str(end.date()))
                         return end
                     except:
                         return None
             try:
-                api.make_request(str(start.date()), str(start.date() + one_day))
+                api.make_request(str(start.date()), str(start.date()))
                 end = start
                 start -= delta
                 delta = (end - start) / 2
@@ -82,22 +94,22 @@ def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: 
                 start_req_date = curr_date
                 counter += 1
             elif counter == n_days.days - 1:
-                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((curr_date + one_day).date()))
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((curr_date).date()))
                 counter = 0
             else:
                 counter += 1
         else:
             if counter != 0:
                 end_req_date = curr_date - one_day
-                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((end_req_date + one_day).date()))
+                api.put_req_data_to_dict(data_from_db, str(start_req_date.date()), str((end_req_date).date()))
             if curr_date == end:
                 break
             counter = 0
 
         curr_date += one_day
 
-    return data_from_db
-
+    sorted_data = sort_dates_by_order(data_from_db)
+    return sorted_data
 
 def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
     one_day = timedelta(days=1)
@@ -126,23 +138,24 @@ def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_da
             end_req_date += n_days
             continue
 
-        curr_date = end_req_date
+        curr_date = end_req_date - one_day
         while curr_date > start_this_req_date:
             if str(curr_date.date()) in data_from_db:
                 curr_date -= one_day
             else:
                 end_this_req_date = curr_date
+
                 break
 
         api.put_req_data_to_dict(data_from_db, str(start_this_req_date.date()), str(end_this_req_date.date()))
         start_req_date += n_days
         end_req_date += n_days
 
-    return data_from_db
+    sorted_data = sort_dates_by_order(data_from_db)
+    return sorted_data
 
 
 if __name__ == '__main__':
-
 
     # парсинг аргументов из командной строки
     parser = argparse.ArgumentParser(description='Process some integers.')
@@ -184,7 +197,8 @@ if __name__ == '__main__':
             print("Первая валидная дата в итервале - " + str(start.date()))
 
     # запрос данных в зависимости от режима
-    print("Количество дат в кэшче по заданному интервалу: " + str(length))
+    print("Количество дат в кэше по заданному интервалу: " + str(length))
+    print(data_from_db)
     if len(data_from_db) < amount_of_dates:
         print("Недостаточно данных из кэша, запрос данных с сервера")
         if mode == "min_data":
