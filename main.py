@@ -77,7 +77,9 @@ def default_getting_data(data_from_db: dict, start: datetime, end: datetime, n_d
         start_req_date = end_req_date
         end_req_date = start_req_date + n_days
 
-    return data_from_db
+
+    sorted_data = sort_dates_by_order(data_from_db)
+    return sorted_data
 
 
 def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
@@ -110,6 +112,7 @@ def minimizing_data(data_from_db: dict, start: datetime, end: datetime, n_days: 
 
     sorted_data = sort_dates_by_order(data_from_db)
     return sorted_data
+
 
 def minimizing_requests(data_from_db: dict, start: datetime, end: datetime, n_days: timedelta, api: BTCApi):
     one_day = timedelta(days=1)
@@ -181,7 +184,9 @@ if __name__ == '__main__':
     plot = plotData()
 
     start = make_date_of_string(start_date)
-    end = make_date_of_string(end_date)
+    one_day = timedelta(days=1)
+    end = make_date_of_string(end_date) - one_day
+    end_date = str(end.date())
     time = end - start
     amount_of_dates = time.days
     data_from_db = db.get_from_database(start_date, end_date)
